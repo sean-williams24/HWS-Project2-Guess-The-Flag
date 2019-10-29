@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UNUserNotificationCenterDelegate {
 
     @IBOutlet var button1: UIButton!
     @IBOutlet var button2: UIButton!
@@ -23,6 +23,16 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .badge, .sound]) { (granted, error) in
+            if granted {
+                print("Granted Permission")
+            } else {
+                print("Permission denied")
+            }
+        }
+        
+        scheduleLocal()
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Score", style: .done, target: self, action: #selector(scoreCheck))
         
@@ -44,6 +54,46 @@ class ViewController: UIViewController {
         
     }
     
+    //MARK: - Notification Center Delegates and Mehtods
+    
+    
+    func scheduleLocal() {
+        let center =  UNUserNotificationCenter.current()
+        center.removeAllPendingNotificationRequests()
+        
+        //Define some content
+        let content = UNMutableNotificationContent()
+        content.title = "Guess The Flag"
+        content.body = "We miss you! Come and have a game of guess the flag?"
+        content.categoryIdentifier = "dailyReminder"
+        content.launchImageName = "uk"
+        content.sound = UNNotificationSound.default
+        
+        var dateComponents = DateComponents()
+        dateComponents.hour = 12
+        dateComponents.minute = 35
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        center.add(request)
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        
+        switch response.actionIdentifier {
+        case UNNotificationDefaultActionIdentifier:
+            // the user swiped to unlock
+            print("Default identifier")
+        default:
+            break
+        }
+    }
+    
+
+    
+    
+    //MARK: - Action & Private Methods
+    
     func askQuestion(action: UIAlertAction! = nil) {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
@@ -55,7 +105,6 @@ class ViewController: UIViewController {
         title = "\(countries[correctAnswer].uppercased())"
 
     }
-
     
     @IBAction func buttonTapped(_ sender: UIButton) {
         
